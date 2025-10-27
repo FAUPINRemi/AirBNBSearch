@@ -3,7 +3,7 @@ version: "3.9"
 services:
   app:
     build: .
-    container_name: express-ejs-app
+    container_name: airbnb_search_faupin
     environment:
       - MONGO_URI=${MONGO_URI}   
       - PORT=4200
