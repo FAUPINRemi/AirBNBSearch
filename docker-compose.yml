@@ -1,0 +1,16 @@
+version: "3.9"
+
+services:
+  app:
+    build: .
+    container_name: express-ejs-app
+    environment:
+      - MONGO_URI=${MONGO_URI}   
+      - PORT=4200
+      - NODE_ENV=development
+    ports:
+      - "4200:4200"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: node server.js
