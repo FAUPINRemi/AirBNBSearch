@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AirBNB Search</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="site">
+    <header class="site-header">
+      <div class="site-header-inner">
+        <div class="logo">AirBNB Search</div>
+        <% if (user) { %>
+          <form method="POST" action="/logout">
+            <button class="btn btn-ghost" type="submit">Déconnexion</button>
+          </form>
+        <% } %>
+      </div>
+    </header>
+
+    <main class="site-main">
+      <% if (!user) { %>
+        <section class="hero">
+          <div class="hero-text">
+            <h1>Trouve ton prochain séjour</h1>
+            <p>Connecte-toi pour rechercher des annonces par pays, prix et nombre de personnes.</p>
+          </div>
+          <section class="card hero-auth">
+            <h2>Connexion</h2>
+            <form method="POST" action="/login" class="form">
+              <div class="field">
+                <label for="username">Nom d'utilisateur</label>
+                <input id="username" name="username" type="text" required />
+              </div>
+              <div class="field">
+                <label for="password">Mot de passe</label>
+                <input id="password" name="password" type="password" required />
+              </div>
+              <% if (errorLogin) { %>
+                <p class="error-msg"><%= errorLogin %></p>
+              <% } %>
+              <button class="btn btn-primary btn-full" type="submit">Se connecter</button>
+            </form>
+          </section>
+        </section>
+      <% } else { %>
+        <section class="shell card">
+          <div class="shell-header">
+            <div>
+              <h1>Moteur de recherche AirBNB</h1>
+              <p>Affichage des annonces depuis MongoDB (sample_airbnb).</p>
+            </div>
+            <p class="shell-user">Connecté : <strong><%= user.username %></strong></p>
+          </div>
+
+          <section class="shell-grid">
+            <section class="filters">
+              <h2>Filtres</h2>
+              <form method="GET" action="/search" class="form">
+                <div class="field">
+                  <label for="country">Pays</label>
+                  <input id="country" name="country" type="text" value="<%= filters.country || '' %>"/>
+                </div>
+                <div class="field">
+                  <label for="guests">Nombre de personnes</label>
+                  <input id="guests" name="guests" type="number" min="1" value="<%= filters.guests || '' %>"/>
+                </div>
+                <div class="field-row">
+                  <div class="field">
+                    <label for="priceMin">Prix min (€)</label>
+                    <input id="priceMin" name="priceMin" type="number" min="0" value="<%= filters.priceMin || '' %>"/>
+                  </div>
+                  <div class="field">
+                    <label for="priceMax">Prix max (€)</label>
+                    <input id="priceMax" name="priceMax" type="number" min="0" value="<%= filters.priceMax || '' %>"/>
+                  </div>
+                </div>
+                <div class="field field-checkbox">
+                  <input id="sortPopular" name="sortPopular" type="checkbox"
+                    <%= filters.sortPopular === 'on' ? 'checked' : '' %>/>
+                  <label for="sortPopular">Trier par popularité</label>
+                </div>
+                <button class="btn btn-primary btn-full" type="submit">Find</button>
+              </form>
+            </section>
+
+            <section class="results">
+              <div class="results-header">
+                <h2>Résultats</h2>
+                <span class="results-count">
+                  <%= listings && listings.length ? listings.length + ' annonces' : '0 annonce' %>
+                </span>
+              </div>
+              <% if (listings && listings.length > 0) { %>
+                <ul class="results-list">
+                  <% listings.forEach(function(listing) { %>
+                    <li class="result-card">
+                      <div class="result-main">
+                        <h3><%= listing.name || 'Sans titre' %></h3>
+                        <p class="result-location">
+                          <%= listing.country || 'Pays inconnu' %>
+                          <% if (listing.city) { %> • <%= listing.city %> <% } %>
+                        </p>
+                      </div>
+                      <div class="result-meta">
+                        <span><%= listing.price != null ? listing.price + ' €' : '— €' %></span>
+                        <span><%= listing.accommodates || listing.maxGuests || '?' %> pers</span>
+                      </div>
+                    </li>
+                  <% }); %>
+                </ul>
+              <% } else { %>
+                <p class="results-empty">Aucune annonce ne correspond à ces filtres.</p>
+              <% } %>
+            </section>
+          </section>
+        </section>
+      <% } %>
+    </main>
+
+    <footer class="site-footer">
+      <p>Projet ESGI – Node.js • Express • EJS • MongoDB</p>
+    </footer>
+  </div>
+  </div>
+</body>
+</html>

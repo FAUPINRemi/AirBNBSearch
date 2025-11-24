@@ -1,32 +1,39 @@
 require('dotenv').config();
 const path = require('path');
 const express = require('express');
-const mongoose = require('mongoose');
+const session = require('express-session');
+const connectDatabase = require('./src/config/database');
+const routes = require('./src/routes/index');
 
 const app = express();
 
+// Connexion MongoDB
+connectDatabase();
+
+// EJS + static
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
-
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Body parsers
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-const MONGO_URI = process.env.MONGO_URI;
-mongoose
-  .connect(MONGO_URI)
-  .then(() => console.log('Connecté à MongoDB'))
-  .catch((err) => {
-    console.error('Erreur MongoDB :', err.message);
-  });
+// Sessions
+app.use(
+	session({
+		secret: process.env.SESSION_SECRET || 'dev-secret',
+		resave: false,
+		saveUninitialized: false,
+		cookie: { maxAge: 1000 * 60 * 60 }
+	})
+);
 
+// Routes
+app.use('/', routes);
 
-app.get('/', (req, res) => {
-  res.send('TEST de.');
-});
-
-const PORT = process.env.PORT;
+// Lancement serveur
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Serveur démarré sur http://localhost:${PORT}`);
+	console.log(`Serveur démarré sur http://localhost:${PORT}`);
 });
