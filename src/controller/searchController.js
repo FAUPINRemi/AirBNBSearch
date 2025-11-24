@@ -1,4 +1,3 @@
-// src/controller/searchController.js
 const { searchListings } = require('../services/listService');
 const User = require('../models/user');
 
@@ -9,7 +8,7 @@ async function getIndex(req, res) {
   let listings = [];
 
   if (isAuthenticated) {
-    // Par défaut, afficher toutes les annonces
+    //on affiche toutes les annonces par defaut
     listings = await searchListings(filters);
   }
 

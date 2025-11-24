@@ -18,31 +18,28 @@ async function searchListings(filters = {}) {
     ];
   }
 
-  // Nombre de personnes
+  //nombre de personne
   if (guests) {
     query.accommodates = { $gte: Number(guests) };
   }
 
-  // Prix min / max
+  //prix min / max
   if (priceMin || priceMax) {
     query.price = {};
     if (priceMin) query.price.$gte = Number(priceMin);
     if (priceMax) query.price.$lte = Number(priceMax);
   }
 
-  // Utiliser lean() pour obtenir des objets JS simples et faciliter la normalisation
   let mongooseQuery = Liste.find(query).lean();
 
-  // Tri popularité (si demandé)
+  //popularité
   if (sortPopular === 'on') {
     mongooseQuery = mongooseQuery.sort({ review_scores_rating: -1 });
   }
 
   const results = await mongooseQuery.limit(100).exec();
 
-  // Normaliser quelques champs pour l'affichage (country, accommodates, price)
   return (results || []).map(doc => {
-    // Assurer que country existe au premier niveau
     if (!doc.country) {
       doc.country = (
         (doc.address && (doc.address.country || doc.address.country_name || doc.address.country_code)) ||
@@ -52,18 +49,15 @@ async function searchListings(filters = {}) {
       );
     }
 
-    // Accommodates en nombre
     if (doc.accommodates != null) {
       doc.accommodates = Number(doc.accommodates) || doc.accommodates;
     }
 
-    // Price peut être une string comme "$123" ou un objet; essayer de convertir en number
     if (doc.price != null) {
       if (typeof doc.price === 'string') {
         const num = parseFloat(doc.price.replace(/[^0-9.,]/g, '').replace(',', '.'));
         doc.price = Number.isFinite(num) ? num : doc.price;
       } else if (typeof doc.price === 'object') {
-        // exemple: { $numberDecimal: "123.00" }
         const candidate = doc.price.$numberDecimal || doc.price.$numberInt || doc.price.value || null;
         if (candidate != null) {
           const num = Number(candidate);
@@ -74,9 +68,7 @@ async function searchListings(filters = {}) {
       }
     }
 
-    // Normaliser le score de review/popularité
     if (doc.review_scores_rating == null) {
-      // chercher dans plusieurs chemins courants
       const candidate =
         (doc.review_scores && (doc.review_scores.rating ?? doc.review_scores.review_scores_rating)) ||
         (doc.reviewScores && (doc.reviewScores.rating ?? doc.reviewScores.review_scores_rating)) ||
@@ -94,7 +86,6 @@ async function searchListings(filters = {}) {
         }
       }
     } else {
-      // forcer en number si possible
       const n = Number(doc.review_scores_rating);
       if (!Number.isNaN(n)) doc.review_scores_rating = n;
     }
