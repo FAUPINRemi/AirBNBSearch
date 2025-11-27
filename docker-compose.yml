@@ -1,44 +1,12 @@
 version: "3.9"
 
 services:
-  mongo:
-    image: mongo:6
-    container_name: airbnb_mongo
-    restart: unless-stopped
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo_data:/data/db
-
-  mongo-seed-data:
-    image: mongo:6
-    depends_on:
-      - mongo
-    entrypoint: ["/bin/sh", "-c"]
-    volumes:
-      - ./scripts:/scripts:ro
-      - seed_data:/seed
-    command: /bin/sh /scripts/seed-data.sh
-
-  mongo-seed-user:
-    image: mongo:6
-    depends_on:
-      - mongo
-    entrypoint: ["/bin/sh", "-c"]
-    volumes:
-      - ./scripts:/scripts:ro
-      - seed_data:/seed
-    command: /bin/sh /scripts/seed-user.sh
-
   app:
     build: .
     container_name: airbnb_search_faupin
-    depends_on:
-      - mongo
-      - mongo-seed-data
-      - mongo-seed-user
     environment:
-      - MONGO_URI=mongodb://mongo:27017/sample_airbnb
+      - MONGO_URI=${MONGO_URI}
+      - MONGO_AUTH_URI=${MONGO_AUTH_URI}
       - PORT=4200
       - NODE_ENV=development
       - SESSION_SECRET=change-me
@@ -48,9 +16,7 @@ services:
       - .:/app
       - /app/node_modules
       - seed_data:/seed
-    command: >
-      /bin/sh -c 'echo "Waiting for DB seed flag..."; while [ ! -f /seed/seed_done ]; do echo "seed not ready, sleeping 2s"; sleep 2; done; echo "Seed ready, starting app"; node server.js'
+   
 
 volumes:
-  mongo_data:
   seed_data:

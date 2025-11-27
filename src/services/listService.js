@@ -5,7 +5,7 @@ async function searchListings(filters = {}) {
   const { country, guests, priceMin, priceMax, sortPopular } = filters;
   const query = {};
 
-  // Pays: chercher sur plusieurs chemins possibles (champ plat ou imbriqué)
+// filtre sur le pays
   if (country) {
     const countryRegex = new RegExp(country.trim(), 'i');
     query.$or = [

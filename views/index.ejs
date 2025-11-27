@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>AirBNB Search</title>
   <link rel="stylesheet" href="/css/style.css">
+  <meta name="description" content="Recherche d'annonces type Airbnb depuis MongoDB">
 </head>
 <body>
   <div class="site">
@@ -12,21 +13,30 @@
       <div class="site-header-inner">
         <div class="logo">AirBNB Search</div>
         <% if (user) { %>
-          <form method="POST" action="/logout">
-            <button class="btn btn-ghost" type="submit">Déconnexion</button>
-          </form>
+          <div class="header-actions">
+            <span class="user-badge">Connecté : <strong><%= user.username %></strong></span>
+            <form method="POST" action="/logout">
+              <button class="btn btn-ghost" type="submit">Déconnexion</button>
+            </form>
+          </div>
         <% } %>
       </div>
     </header>
 
     <main class="site-main">
+      <% if (typeof dbError !== 'undefined' && dbError) { %>
+        <div class="notice notice-error">
+          <strong>Problème de connexion :</strong> <%= dbError %>
+        </div>
+      <% } %>
+
       <% if (!user) { %>
-        <section class="hero">
-          <div class="hero-text">
-            <h1>Trouve ton prochain séjour</h1>
-            <p>Connecte-toi pour rechercher des annonces par pays, prix et nombre de personnes.</p>
+        <section class="auth-hero">
+          <div class="auth-left">
+            <h1>Trouvez votre prochain séjour</h1>
+            <p>Explorez des annonces. Inscrivez-vous dès maintenant ou connectez-vous.</p>
           </div>
-          <section class="card hero-auth">
+          <aside class="auth-card">
             <h2>Connexion</h2>
             <form method="POST" action="/login" class="form">
               <div class="field">
@@ -42,16 +52,29 @@
               <% } %>
               <button class="btn btn-primary btn-full" type="submit">Se connecter</button>
             </form>
-          </section>
+
+            <hr>
+
+            <h3>Inscription</h3>
+            <form method="POST" action="/register" class="form" id="registerForm">
+              <div class="field">
+                <label for="r_username">Nom d'utilisateur</label>
+                <input id="r_username" name="username" type="text" required />
+              </div>
+              <div class="field">
+                <label for="r_password">Mot de passe</label>
+                <input id="r_password" name="password" type="password" required />
+              </div>
+              <button class="btn btn-secondary btn-full" type="submit">S'inscrire</button>
+            </form>
+          </aside>
         </section>
       <% } else { %>
         <section class="shell card">
           <div class="shell-header">
             <div>
-              <h1>Moteur de recherche AirBNB</h1>
-              <p>Affichage des annonces depuis MongoDB (sample_airbnb).</p>
+              <h1>AirBNB</h1>
             </div>
-            <p class="shell-user">Connecté : <strong><%= user.username %></strong></p>
           </div>
 
           <section class="shell-grid">
@@ -77,35 +100,64 @@
                   </div>
                 </div>
                 <div class="field field-checkbox">
-                  <input id="sortPopular" name="sortPopular" type="checkbox"
-                    <%= filters.sortPopular === 'on' ? 'checked' : '' %>/>
+                  <input id="sortPopular" name="sortPopular" type="checkbox" <%= filters.sortPopular === 'on' ? 'checked' : '' %>/>
                   <label for="sortPopular">Trier par popularité</label>
                 </div>
-                <button class="btn btn-primary btn-full" type="submit">Find</button>
+                <button class="btn btn-primary btn-full" type="submit">Rechercher</button>
               </form>
             </section>
 
             <section class="results">
               <div class="results-header">
                 <h2>Résultats</h2>
-                <span class="results-count">
-                  <%= listings && listings.length ? listings.length + ' annonces' : '0 annonce' %>
-                </span>
+                <span class="results-count"><%= listings && listings.length ? listings.length + ' annonces' : '0 annonce' %></span>
               </div>
+
               <% if (listings && listings.length > 0) { %>
                 <ul class="results-list">
                   <% listings.forEach(function(listing) { %>
-                    <li class="result-card">
-                      <div class="result-main">
-                        <h3><%= listing.name || 'Sans titre' %></h3>
-                        <p class="result-location">
-                          <%= listing.country || 'Pays inconnu' %>
-                          <% if (listing.city) { %> • <%= listing.city %> <% } %>
-                        </p>
+                    <li class="result-card" style="align-items:flex-start;">
+                      <div class="result-left">
+                        <% 
+                          let img = listing.picture_url || (listing.images && listing.images.picture_url) || 
+                                    (listing.images && listing.images.medium_url) || null;
+                          if (!img && listing.images && Array.isArray(listing.images) && listing.images.length) {
+                            img = listing.images[0].picture_url || listing.images[0].medium_url || null;
+                          }
+                        %>
+                        <% if (img) { %>
+                          <img src="<%= img %>" alt="<%= listing.name %>" class="thumb" />
+                        <% } else { %>
+                          <div class="thumb thumb-empty">No image</div>
+                        <% } %>
                       </div>
-                      <div class="result-meta">
-                        <span><%= listing.price != null ? listing.price + ' €' : '— €' %></span>
-                        <span><%= listing.accommodates || listing.maxGuests || '?' %> pers</span>
+
+                      <div class="result-body">
+                        <h3 class="listing-title"><%= listing.name || 'Sans titre' %></h3>
+                        <p class="listing-summary"><%= listing.summary || listing.description || '' %></p>
+
+                        <div class="listing-meta">
+                          <span><strong>Pays :</strong> <%= listing.country || '—' %></span>
+                          <span><strong>Hôte :</strong> <%= (listing.host && listing.host.host_name) || listing.host_name || '—' %></span>
+                        </div>
+
+                        <div class="listing-stats">
+                          <span><strong>Capacité :</strong> <%= listing.accommodates || listing.maxGuests || '?' %></span>
+                          <span><strong>Chambres :</strong> <%= listing.bedrooms || '?' %></span>
+                          <span><strong>Sdb :</strong> <%= listing.bathrooms || '?' %></span>
+                        </div>
+
+                        <% if (listing.amenities) { %>
+                          <p class="amenities"><strong>Équipements:</strong> <%= Array.isArray(listing.amenities) ? listing.amenities.join(', ') : listing.amenities %></p>
+                        <% } %>
+
+                      </div>
+
+                      <div class="result-right">
+                        <div class="price"><%= listing.price != null ? listing.price + ' €' : '— €' %></div>
+                        <% if (listing.security_deposit) { %><div class="small">Caution: <%= listing.security_deposit %></div><% } %>
+                        <% if (listing.cleaning_fee) { %><div class="small">Frais ménage: <%= listing.cleaning_fee %></div><% } %>
+                        <a class="btn btn-ghost" href="<%= listing.listing_url || '#' %>" target="_blank">Voir</a>
                       </div>
                     </li>
                   <% }); %>
@@ -118,11 +170,6 @@
         </section>
       <% } %>
     </main>
-
-    <footer class="site-footer">
-      <p>Projet ESGI – Node.js • Express • EJS • MongoDB</p>
-    </footer>
-  </div>
   </div>
 </body>
 </html>

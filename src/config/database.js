@@ -1,16 +1,19 @@
 const mongoose = require('mongoose');
 
-// connexion a la bdd
-async function connectDatabase() {
-	const uri = process.env.MONGO_URI;
+function connectDatabase() {
+	const uri = process.env.MONGO_URI || 'mongodb://mongo:27017/sample_airbnb';
 
-	try {
-		await mongoose.connect(uri);
-		console.log('Connecté à MongoDB');
-	} catch (err) {
-		console.error('Erreur connexion MongoDB :', err.message);
-		process.exit(1);
-	}
+	mongoose.connect(uri, {
+		serverSelectionTimeoutMS: 3000
+	})
+	.then(() => console.log('Connecté à MongoDB '))
+	.catch((err) => console.warn('Impossible de se connecter à MongoDB :', err.message));
+
+	mongoose.isReady = function () {
+		return mongoose.connection && mongoose.connection.readyState === 1;
+	};
+
+	return mongoose;
 }
 
 module.exports = connectDatabase;
